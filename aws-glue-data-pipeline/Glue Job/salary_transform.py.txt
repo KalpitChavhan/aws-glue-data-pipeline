@@ -1,0 +1,26 @@
+import sys
+from pyspark.context import SparkContext
+from awsglue.context import GlueContext
+from pyspark.sql.functions import col
+
+# Initialize Glue Context
+sc = SparkContext()
+glueContext = GlueContext(sc)
+spark = glueContext.spark_session
+
+# Read data from Glue Catalog
+df = glueContext.create_dynamic_frame.from_catalog(
+    database="salary",
+    table_name="salary_previous_year"
+).toDF()
+
+# Increase salary by 10%
+df_updated = df.withColumn("salary", col("salary") * 1.10)
+
+# Write transformed data to S3
+df_updated.write.mode("overwrite").csv(
+    "s3://aws-employee-data-pipeline/fy26/new_salaries.csv",
+    header=True
+)
+
+print("Salary updated and data written successfully!")
